@@ -1,0 +1,27 @@
+# Dependencies and build products
+/node_modules/
+/dist/
+/build/
+
+# Internal planning documents, kept locally only
+/docs/plan/
+
+# Test output
+**/__screenshots__/
+/test-results/
+
+# IDE
+/.idea/*
+!/.idea/runConfigurations/
+
+# Agents
+.claude/*
+!.claude/settings.json
+!.claude/commands/
+!.claude/skills/
+!.claude/launch.json
+
+# Various
+*.log
+*.tmp.txt
+.DS_Store

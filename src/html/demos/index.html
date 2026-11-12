@@ -1,0 +1,92 @@
+<!doctype html>
+<!--
+Copyright 2026 Oidis
+
+SPDX-License-Identifier: BSD-3-Clause
+-->
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>oidshaper demos</title>
+    <style>
+        :root {
+            color-scheme: dark;
+            --background: #202124; --panel: #292a2d; --line: #3c4043;
+            --text: #e8eaed; --muted: #9aa0a6; --accent: #8ab4f8;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0; background: var(--background); color: var(--text);
+            font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+        }
+        main { max-width: 960px; margin: 0 auto; padding: 56px 24px; }
+        h1 { margin: 0; font-size: 30px; font-weight: 600; letter-spacing: -0.01em; }
+        h1 + p { margin: 6px 0 0; color: var(--muted); }
+        h2 {
+            margin: 48px 0 16px; color: var(--muted); font-size: 12px; font-weight: 600;
+            letter-spacing: 0.08em; text-transform: uppercase;
+        }
+        .demos {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;
+            margin: 0; padding: 0; list-style: none;
+        }
+        .demos a {
+            display: block; height: 100%; overflow: hidden; border: 1px solid var(--line); border-radius: 12px;
+            background: var(--panel); color: inherit; text-decoration: none;
+            transition: border-color 0.15s, transform 0.15s;
+        }
+        .demos a:hover, .demos a:focus-visible { border-color: var(--accent); transform: translateY(-2px); outline: none; }
+        .demos svg { display: block; width: 100%; height: auto; border-bottom: 1px solid var(--line); }
+        .demos strong { display: block; padding: 14px 16px 0; font-size: 16px; font-weight: 600; }
+        .demos span { display: block; padding: 4px 16px 16px; color: var(--muted); font-size: 14px; }
+        footer { margin-top: 56px; color: var(--muted); font-size: 13px; }
+        footer a { color: var(--accent); text-decoration: none; }
+    </style>
+</head>
+<body>
+<main>
+    <h1>oidshaper</h1>
+    <p>Browser engine for 3D drawing, modelling, point clouds and maps.</p>
+
+    <h2>Demos</h2>
+    <ul class="demos">
+        <li>
+            <a href="hello-box/">
+                <svg viewBox="0 0 280 150" role="img" aria-label="Three boxes on a grid">
+                    <defs>
+                        <pattern id="iso" width="34.64" height="20" patternUnits="userSpaceOnUse">
+                            <path d="M0 0 L34.64 20 M34.64 0 L0 20" stroke="#34363a" stroke-width="1"/>
+                        </pattern>
+                    </defs>
+                    <rect width="280" height="150" fill="#1b1c1e"/>
+                    <rect width="280" height="150" fill="url(#iso)"/>
+                    <path d="M0 145 L280 -16.7" stroke="#e8605a" stroke-width="1.5" opacity="0.8"/>
+                    <path d="M0 -1.6 L280 160" stroke="#74c365" stroke-width="1.5" opacity="0.8"/>
+                    <path d="M138.6 80 L138.6 30" stroke="#5c9ded" stroke-width="1.5" opacity="0.8"/>
+                    <g transform="translate(96 104)">
+                        <path d="M0 -36 L20.8 -24 L0 -12 L-20.8 -24 Z" fill="#5fd2e0"/>
+                        <path d="M-20.8 -24 L0 -12 L0 12 L-20.8 0 Z" fill="#12b5cb"/>
+                        <path d="M0 -12 L20.8 -24 L20.8 0 L0 12 Z" fill="#0b7d8c"/>
+                    </g>
+                    <g transform="translate(138.6 80)">
+                        <path d="M0 -36 L20.8 -24 L0 -12 L-20.8 -24 Z" fill="#ffd25e"/>
+                        <path d="M-20.8 -24 L0 -12 L0 12 L-20.8 0 Z" fill="#f9ab00"/>
+                        <path d="M0 -12 L20.8 -24 L20.8 0 L0 12 Z" fill="#b27a00"/>
+                    </g>
+                    <g transform="translate(181.2 56)">
+                        <path d="M0 -36 L20.8 -24 L0 -12 L-20.8 -24 Z" fill="#c890f8"/>
+                        <path d="M-20.8 -24 L0 -12 L0 12 L-20.8 0 Z" fill="#a142f4"/>
+                        <path d="M0 -12 L20.8 -24 L20.8 0 L0 12 Z" fill="#6f22b3"/>
+                    </g>
+                </svg>
+                <strong>Hello box</strong>
+                <span>Boxes in S-JTSK on an XYZ grid; orbit, pan and zoom with switchable controls.</span>
+            </a>
+        </li>
+    </ul>
+
+    <footer>BSD-3-Clause · <a href="https://github.com/oidis-io/oidshaper">github.com/oidis-io/oidshaper</a></footer>
+</main>
+</body>
+</html>

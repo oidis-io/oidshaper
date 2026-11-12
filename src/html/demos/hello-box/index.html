@@ -1,0 +1,42 @@
+<!doctype html>
+<!--
+Copyright 2026 Oidis
+
+SPDX-License-Identifier: BSD-3-Clause
+-->
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Hello box · oidshaper</title>
+    <style>
+        html, body { height: 100%; margin: 0; overflow: hidden; background: #202124; }
+        body { color: #e8eaed; font: 13px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
+        canvas { display: block; width: 100%; height: 100%; }
+        .panel {
+            position: absolute; margin: 0; border: 1px solid #3c4043; border-radius: 8px;
+            background: rgb(32 33 36 / 82%); backdrop-filter: blur(6px);
+        }
+        header.panel { top: 12px; left: 12px; display: flex; align-items: center; gap: 14px; padding: 8px 12px; }
+        header a { color: #8ab4f8; text-decoration: none; }
+        header a:hover { text-decoration: underline; }
+        header h1 { margin: 0; font-size: 14px; font-weight: 600; }
+        header label { color: #9aa0a6; }
+        header select {
+            margin-left: 6px; padding: 2px 4px; border: 1px solid #5f6368; border-radius: 4px;
+            background: #303134; color: #e8eaed; font: inherit;
+        }
+        .hint { right: 12px; bottom: 12px; max-width: calc(100% - 160px); padding: 6px 10px; color: #bdc1c6; }
+    </style>
+</head>
+<body>
+<canvas id="view"></canvas>
+<header class="panel">
+    <a href="../">← Demos</a>
+    <h1>Hello box</h1>
+    <label>Controls<select id="controls"></select></label>
+</header>
+<p id="hint" class="panel hint"></p>
+<script type="module" src="../../../typescript/demos/hello-box/main.ts"></script>
+</body>
+</html>

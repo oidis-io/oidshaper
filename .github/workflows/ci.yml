@@ -1,0 +1,247 @@
+# * ******************************************************************************************************** *
+# *
+# * Copyright 2026 Oidis
+# *
+# * SPDX-License-Identifier: BSD-3-Clause
+# * The BSD-3-Clause license for this file can be found in the LICENSE file included with this distribution
+# * or at https://spdx.org/licenses/BSD-3-Clause.html#licenseText
+# *
+# * ********************************************************************************************************* */
+
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["[0-9]*.[0-9]*.[0-9]*", "!*-*"]
+  pull_request:
+    branches: [develop, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  # A cancelled run could leave a channel without its release.
+  cancel-in-progress: >-
+    ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/develop' &&
+    !startsWith(github.ref, 'refs/tags/') }}
+
+jobs:
+  check:
+    name: Version, lint, types and unit tests
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # Tags for the released-version check.
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Set the build version
+        id: version
+        run: |
+          BASE=$(node -p "require('./package.json').version")
+          YEAR=$(date -u +%Y)
+          case "$GITHUB_REF" in
+            refs/heads/main|refs/heads/develop|refs/tags/*)
+              if [ "${BASE%%.*}" -lt "$YEAR" ]; then
+                echo "::error::Version $BASE is from a past year; set package.json to $YEAR.<release>.0."
+                exit 1
+              fi ;;
+          esac
+          case "$GITHUB_REF" in
+            refs/tags/*)
+              if [ "$GITHUB_REF_NAME" != "$BASE" ]; then
+                echo "::error::Tag $GITHUB_REF_NAME does not match the package version $BASE."
+                exit 1
+              fi
+              VERSION="$BASE" ;;
+            refs/heads/main|refs/heads/develop)
+              if git rev-parse -q --verify "refs/tags/$BASE" > /dev/null; then
+                echo "::error::Version $BASE is already released; raise it in package.json."
+                exit 1
+              fi
+              if [ "$GITHUB_REF" = "refs/heads/main" ]; then
+                VERSION="$BASE-eap.$GITHUB_RUN_NUMBER"
+              else
+                VERSION="$BASE-dev.$GITHUB_RUN_NUMBER"
+              fi ;;
+            *) VERSION="$BASE-ci.$GITHUB_RUN_NUMBER" ;;
+          esac
+          echo "Build version $VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+      - run: npm ci
+      - run: npm run check:licences
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run test:unit
+
+  browser:
+    name: Integration and e2e tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Read the Playwright version
+        id: playwright
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      - name: Cache the Playwright browsers
+        id: browsers
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+      - name: Install Chromium with its system libraries
+        if: steps.browsers.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+      - name: Install the system libraries for the cached Chromium
+        if: steps.browsers.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+      - run: npm run test:integration
+      - run: npm run test:e2e
+      - name: Keep the e2e report
+        if: failure() && !env.ACT
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-report
+          path: build/e2e/
+          if-no-files-found: ignore
+
+  build:
+    name: Build and package
+    needs: [check, browser]
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ needs.check.outputs.version }}
+    env:
+      VERSION: ${{ needs.check.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm version --no-git-tag-version --allow-same-version "$VERSION"
+      - run: npm run build
+      - run: npm run pack
+      - run: npm run test:package
+      - name: Collect the release assets
+        run: |
+          mkdir -p build/release build/unpacked
+          cp build/oidis-io-oidshaper-*.tgz build/release/oidshaper.tgz
+          tar -xzf build/release/oidshaper.tgz -C build/unpacked
+          (cd build/unpacked/package && zip -qr ../../release/oidshaper.zip .)
+          (cd build/demos && zip -qr ../release/oidshaper-demos.zip .)
+          cp dist/oidshaper.js.map build/release/oidshaper.js.map
+          ls -l build/release
+      # act's artifact server does not support upload-artifact v7.
+      - if: ${{ !env.ACT }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: oidshaper-${{ env.VERSION }}
+          path: build/release/
+          if-no-files-found: error
+
+  release:
+    name: Publish
+    needs: build
+    if: >-
+      github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' ||
+      startsWith(github.ref, 'refs/tags/'))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      VERSION: ${{ needs.build.outputs.version }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Check that a release tag points to main
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          # act has no up-to-date remote branches.
+          if [ -n "$ACT" ]; then MAIN=refs/heads/main; else MAIN=refs/remotes/origin/main; fi
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" "$MAIN"; then
+            echo "::error::Tag $GITHUB_REF_NAME is not on main; releases are made from main only."
+            exit 1
+          fi
+      - if: ${{ !env.ACT }}
+        uses: actions/download-artifact@v8
+        with:
+          name: oidshaper-${{ env.VERSION }}
+          path: release/
+      - name: Publish the release
+        if: ${{ !env.ACT }}
+        run: |
+          case "$GITHUB_REF" in
+            refs/tags/*)
+              # Re-run after a partial failure.
+              if gh release view "$VERSION" > /dev/null 2>&1; then
+                gh release upload "$VERSION" --clobber release/*
+              else
+                gh release create "$VERSION" --verify-tag --latest --generate-notes --title "$VERSION" release/*
+              fi ;;
+            *)
+              if [ "$GITHUB_REF" = "refs/heads/main" ]; then CHANNEL=eap; else CHANNEL=dev; fi
+              if gh release view "$CHANNEL" > /dev/null 2>&1; then
+                gh release delete "$CHANNEL" --cleanup-tag --yes
+              fi
+              # A tag left by an interrupted run would pin the new release to an old commit.
+              if git ls-remote --exit-code --tags origin "refs/tags/$CHANNEL" > /dev/null; then
+                git push origin ":refs/tags/$CHANNEL"
+              fi
+              gh release create "$CHANNEL" --target "$GITHUB_SHA" --prerelease --latest=false --title "$VERSION" \
+                --notes "Newest build of $GITHUB_REF_NAME, $VERSION from $GITHUB_SHA." release/* ;;
+          esac
+      - name: Show what would be published (local run with act)
+        if: ${{ env.ACT }}
+        run: |
+          if [ -z "$VERSION" ]; then
+            echo "::error::The build job did not pass its version on."
+            exit 1
+          fi
+          case "$GITHUB_REF" in
+            refs/tags/*) echo "Would publish release $VERSION, marked as latest." ;;
+            refs/heads/main) echo "Would replace pre-release eap with $VERSION at $GITHUB_SHA." ;;
+            *) echo "Would replace pre-release dev with $VERSION at $GITHUB_SHA." ;;
+          esac
+      - name: Move develop to the next version
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          if [ -n "$ACT" ]; then DEVELOP=refs/heads/develop; else DEVELOP=refs/remotes/origin/develop; fi
+          if ! git rev-parse -q --verify "$DEVELOP" > /dev/null; then
+            echo "::warning::There is no develop branch, so no version to raise."
+            exit 0
+          fi
+          git switch -q --detach "$DEVELOP"
+          CURRENT=$(node -p "require('./package.json').version")
+          if [ "$CURRENT" != "$VERSION" ]; then
+            echo "develop is at $CURRENT, not at the released $VERSION; it has moved on already."
+            exit 0
+          fi
+          RELEASE=${VERSION#*.}
+          NEXT="${VERSION%%.*}.$((${RELEASE%%.*} + 1)).0"
+          npm version --no-git-tag-version "$NEXT" > /dev/null
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -q -m "Raise the version to $NEXT after the $VERSION release" -- package.json package-lock.json
+          if [ -n "$ACT" ]; then
+            echo "Would push $(git rev-parse --short HEAD) to develop: $CURRENT -> $NEXT."
+            git show --stat --format="%s" HEAD
+            exit 0
+          fi
+          # Needs a bypass once develop is protected.
+          git push origin HEAD:refs/heads/develop

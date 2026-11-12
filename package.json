@@ -1,0 +1,67 @@
+{
+  "name": "@oidis-io/oidshaper",
+  "version": "2026.3.0",
+  "description": "Extensible browser-based engine for 3D drawing, modeling, point clouds, and geospatial visualization.",
+  "keywords": [
+    "oidis",
+    "3d",
+    "cad",
+    "pointcloud",
+    "threejs",
+    "cesium"
+  ],
+  "repository": "https://github.com/oidis-io/oidshaper.git",
+  "author": "Oidis",
+  "license": "BSD-3-Clause",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=26"
+  },
+  "files": [
+    "dist",
+    "!dist/**/*.map"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/oidshaper.js"
+    }
+  },
+  "scripts": {
+    "dev": "vite --config config/vite.config.ts",
+    "preview": "vite preview --config config/vite.config.ts",
+    "build": "npm run build:lib && npm run build:types && npm run build:demos",
+    "build:types": "tsc -p config/tsconfig.build.json",
+    "build:lib": "vite build --config config/vite.lib.config.ts",
+    "build:demos": "vite build --config config/vite.config.ts",
+    "pack": "npm pack --pack-destination build",
+    "test:package": "node scripts/check-package.mjs",
+    "check:licences": "node scripts/check-licences.mjs",
+    "lint": "eslint --config config/eslint.config.mjs --max-warnings 0 .",
+    "lint:fix": "eslint --config config/eslint.config.mjs --fix .",
+    "typecheck": "tsc --noEmit -p config/tsconfig.json && tsc --noEmit -p config/tsconfig.test.json",
+    "test": "npm run test:unit && npm run test:integration && npm run test:e2e",
+    "test:unit": "vitest run --config config/vitest.config.ts --project unit",
+    "test:integration": "vitest run --config config/vitest.config.ts --project integration",
+    "test:e2e": "playwright test --config config/playwright.config.ts",
+    "browsers": "playwright install chromium"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.65.0",
+    "@stylistic/eslint-plugin": "^5.10.0",
+    "@types/node": "^26.6.6",
+    "@types/three": "^0.187.0",
+    "@vitest/browser-playwright": "^5.1.0",
+    "eslint": "^10.14.0",
+    "eslint-plugin-jsdoc": "^65.4.5",
+    "globals": "^17.14.0",
+    "playwright": "^1.65.0",
+    "three": "^0.187.0",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.72.2",
+    "vite": "^8.3.8",
+    "vitest": "^5.1.0"
+  }
+}
