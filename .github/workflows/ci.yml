@@ -195,7 +195,14 @@ jobs:
                 gh release create "$VERSION" --verify-tag --latest --generate-notes --title "$VERSION" release/*
               fi ;;
             *)
-              if [ "$GITHUB_REF" = "refs/heads/main" ]; then CHANNEL=eap; else CHANNEL=dev; fi
+              # eap is titled by its candidate version, dev is one container like a nightly.
+              if [ "$GITHUB_REF" = "refs/heads/main" ]; then
+                CHANNEL=eap
+                TITLE="$VERSION"
+              else
+                CHANNEL=dev
+                TITLE=dev
+              fi
               if gh release view "$CHANNEL" > /dev/null 2>&1; then
                 gh release delete "$CHANNEL" --cleanup-tag --yes
               fi
@@ -203,8 +210,8 @@ jobs:
               if git ls-remote --exit-code --tags origin "refs/tags/$CHANNEL" > /dev/null; then
                 git push origin ":refs/tags/$CHANNEL"
               fi
-              gh release create "$CHANNEL" --target "$GITHUB_SHA" --prerelease --latest=false --title "$VERSION" \
-                --notes "Newest build of $GITHUB_REF_NAME, $VERSION from $GITHUB_SHA." release/* ;;
+              gh release create "$CHANNEL" --target "$GITHUB_SHA" --prerelease --latest=false --title "$TITLE" \
+                --notes "$VERSION from $GITHUB_REF_NAME at $GITHUB_SHA, built $(date -u +%Y-%m-%dT%H:%MZ)." release/* ;;
           esac
       - name: Show what would be published (local run with act)
         if: ${{ env.ACT }}
@@ -216,7 +223,7 @@ jobs:
           case "$GITHUB_REF" in
             refs/tags/*) echo "Would publish release $VERSION, marked as latest." ;;
             refs/heads/main) echo "Would replace pre-release eap with $VERSION at $GITHUB_SHA." ;;
-            *) echo "Would replace pre-release dev with $VERSION at $GITHUB_SHA." ;;
+            *) echo "Would replace pre-release dev (titled dev) with $VERSION at $GITHUB_SHA." ;;
           esac
       - name: Move develop to the next version
         if: startsWith(github.ref, 'refs/tags/')
