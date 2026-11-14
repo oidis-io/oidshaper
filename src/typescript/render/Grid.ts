@@ -9,66 +9,88 @@
  * ********************************************************************************************************* */
 
 import { BufferGeometry, Color, Float32BufferAttribute, LineBasicMaterial, LineSegments, MathUtils } from "three";
-import { AXIS_COLOURS } from "./AxisColours.js";
+import { AxisColours } from "./AxisColours.js";
+
 import type { IGridOptions } from "./IGridOptions.js";
 
-const MAX_CELLS : number = 1000; // per half
-const LINE_COLOUR : string = "#9aa0a6";
-const MINOR_ALPHA : number = 0.22;
-const MAJOR_ALPHA : number = 0.5;
-const AXIS_ALPHA : number = 1;
-const FADE_START : number = 0.3; // share of the half size
+export class Grid {
+    private static readonly POSITION_COMPONENTS : number = 3;
+    private static readonly COLOUR_COMPONENTS : number = 4;
+    private static readonly DEFAULT_STEP : number = 1;
+    private static readonly DEFAULT_MAJOR_EVERY : number = 10;
+    private static readonly DEFAULT_SIZE : number = 100;
+    private static readonly MAX_CELLS : number = 1000; // per half
+    private static readonly LINE_COLOUR : string = "#9aa0a6";
+    private static readonly MINOR_ALPHA : number = 0.22;
+    private static readonly MAJOR_ALPHA : number = 0.5;
+    private static readonly AXIS_ALPHA : number = 1;
+    private static readonly FADE_START : number = 0.3; // share of the half size
+    private readonly step : number;
+    private readonly majorEvery : number;
+    private readonly cells : number;
+    private readonly positions : number[] = [];
+    private readonly colours : number[] = [];
 
-// Around (0, 0, 0); the caller moves it to options.centre.
-export function createGrid(options : IGridOptions) : LineSegments {
-    const step : number = options.step ?? 1;
-    const majorEvery : number = options.majorEvery ?? 10;
-    const cells : number = Math.round((options.size ?? 100) / step / 2);
-    if (!(step > 0) || !Number.isInteger(majorEvery) || majorEvery < 1 || cells < 1 || cells > MAX_CELLS) {
-        throw new Error(`Grid needs a positive step, a whole majorEvery and 1 to ${String(MAX_CELLS)} cells per half.`);
+    // Around (0, 0, 0); the caller moves it to options.centre.
+    public static Create(options : IGridOptions) : LineSegments {
+        return new Grid(options).build();
     }
-    const half : number = cells * step;
-    const positions : number[] = [];
-    const colours : number[] = [];
-    const vertex = (x : number, y : number, z : number, colour : Color, alpha : number) : void => {
-        positions.push(x, y, z);
-        colours.push(colour.r, colour.g, colour.b, alpha);
-    };
+
+    private constructor(options : IGridOptions) {
+        this.step = options.step ?? Grid.DEFAULT_STEP;
+        this.majorEvery = options.majorEvery ?? Grid.DEFAULT_MAJOR_EVERY;
+        this.cells = Math.round((options.size ?? Grid.DEFAULT_SIZE) / this.step / 2);
+        if (!(this.step > 0) || !Number.isInteger(this.majorEvery) || this.majorEvery < 1 ||
+            this.cells < 1 || this.cells > Grid.MAX_CELLS) {
+            throw new Error(
+                `Grid needs a positive step, a whole majorEvery and 1 to ${String(Grid.MAX_CELLS)} cells per half.`
+            );
+        }
+    }
+
+    private build() : LineSegments {
+        const grey : Color = new Color(Grid.LINE_COLOUR);
+        for (let index : number = -this.cells; index <= this.cells; index++) {
+            if (index !== 0) {
+                const alpha : number = index % this.majorEvery === 0 ? Grid.MAJOR_ALPHA : Grid.MINOR_ALPHA;
+                this.addLine(index * this.step, false, grey, alpha);
+                this.addLine(index * this.step, true, grey, alpha);
+            }
+        }
+        this.addLine(0, false, new Color(AxisColours.VALUES.x), Grid.AXIS_ALPHA);
+        this.addLine(0, true, new Color(AxisColours.VALUES.y), Grid.AXIS_ALPHA);
+        const blue : Color = new Color(AxisColours.VALUES.z);
+        this.addVertex(0, 0, 0, blue, Grid.AXIS_ALPHA);
+        this.addVertex(0, 0, this.majorEvery * this.step, blue, Grid.AXIS_ALPHA);
+
+        const geometry : BufferGeometry = new BufferGeometry();
+        geometry.setAttribute("position", new Float32BufferAttribute(this.positions, Grid.POSITION_COMPONENTS));
+        geometry.setAttribute("color", new Float32BufferAttribute(this.colours, Grid.COLOUR_COMPONENTS));
+        return new LineSegments(geometry, new LineBasicMaterial({
+            vertexColors: true,
+            transparent: true,
+            depthWrite: false
+        }));
+    }
+
+    private addVertex(x : number, y : number, z : number, colour : Color, alpha : number) : void {
+        this.positions.push(x, y, z);
+        this.colours.push(colour.r, colour.g, colour.b, alpha);
+    }
+
     // Split per cell, so the alpha fades with the distance from the centre.
-    const line = (offset : number, alongY : boolean, colour : Color, alpha : number) : void => {
-        for (let cell : number = -cells; cell < cells; cell++) {
+    private addLine(offset : number, alongY : boolean, colour : Color, alpha : number) : void {
+        const half : number = this.cells * this.step;
+        for (let cell : number = -this.cells; cell < this.cells; cell++) {
             [cell, cell + 1].forEach((end) => {
-                const along : number = end * step;
-                const fade : number = 1 - MathUtils.smoothstep(Math.hypot(along, offset), half * FADE_START, half);
+                const along : number = end * this.step;
+                const fade : number = 1 - MathUtils.smoothstep(Math.hypot(along, offset), half * Grid.FADE_START, half);
                 if (alongY) {
-                    vertex(offset, along, 0, colour, alpha * fade);
+                    this.addVertex(offset, along, 0, colour, alpha * fade);
                 } else {
-                    vertex(along, offset, 0, colour, alpha * fade);
+                    this.addVertex(along, offset, 0, colour, alpha * fade);
                 }
             });
         }
-    };
-
-    const grey : Color = new Color(LINE_COLOUR);
-    for (let index : number = -cells; index <= cells; index++) {
-        if (index !== 0) {
-            const alpha : number = index % majorEvery === 0 ? MAJOR_ALPHA : MINOR_ALPHA;
-            line(index * step, false, grey, alpha);
-            line(index * step, true, grey, alpha);
-        }
     }
-    line(0, false, new Color(AXIS_COLOURS.x), AXIS_ALPHA);
-    line(0, true, new Color(AXIS_COLOURS.y), AXIS_ALPHA);
-    const blue : Color = new Color(AXIS_COLOURS.z);
-    vertex(0, 0, 0, blue, AXIS_ALPHA);
-    vertex(0, 0, majorEvery * step, blue, AXIS_ALPHA);
-
-    const geometry : BufferGeometry = new BufferGeometry();
-    geometry.setAttribute("position", new Float32BufferAttribute(positions, 3));
-    geometry.setAttribute("color", new Float32BufferAttribute(colours, 4));
-    return new LineSegments(geometry, new LineBasicMaterial({
-        vertexColors: true,
-        transparent: true,
-        depthWrite: false
-    }));
 }

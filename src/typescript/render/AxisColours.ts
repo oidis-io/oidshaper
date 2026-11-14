@@ -14,4 +14,6 @@ export interface IAxisColours {
     readonly z : string;
 }
 
-export const AXIS_COLOURS : IAxisColours = {x: "#e8605a", y: "#74c365", z: "#5c9ded"};
+export class AxisColours {
+    public static readonly VALUES : IAxisColours = {x: "#e8605a", y: "#74c365", z: "#5c9ded"};
+}

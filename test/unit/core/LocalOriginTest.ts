@@ -9,7 +9,9 @@
  * ********************************************************************************************************* */
 
 import { describe, expect, it } from "vitest";
-import { LocalOrigin, type IVector3 } from "../../../src/typescript/core/LocalOrigin.js";
+import { LocalOrigin } from "../../../src/typescript/core/LocalOrigin.js";
+
+import type { IVector3 } from "../../../src/typescript/core/LocalOrigin.js";
 
 // S-JTSK
 const POINT : IVector3 = {x: -743123.456, y: -1043210.789, z: 312.4};

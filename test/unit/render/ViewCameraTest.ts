@@ -29,6 +29,41 @@ describe("ViewCamera", () => {
         view.LookAt(new Vector3(1, 2, 3), 20);
     });
 
+    it("selects all 26 cube directions without moving the target or changing distance", () => {
+        const target = view.getTarget();
+        for (const x of [-1, 0, 1]) {
+            for (const y of [-1, 0, 1]) {
+                for (const z of [-1, 0, 1]) {
+                    if (x === 0 && y === 0 && z === 0) {
+                        continue;
+                    }
+                    const direction = new Vector3(x, y, z).normalize();
+                    view.setDirection(direction);
+                    expect(view.getTarget().equals(target)).toBe(true);
+                    expect(view.camera.position.distanceTo(target)).toBeCloseTo(20, 9);
+                    expect(view.getDirection().distanceTo(direction.clone().negate())).toBeLessThan(1e-9);
+                    expectClose(project(view, target), new Vector2());
+                    expect(view.camera.matrixWorld.elements.every(Number.isFinite)).toBe(true);
+                }
+            }
+        }
+    });
+
+    it("can orbit after selecting top or bottom and rejects invalid directions", () => {
+        for (const z of [-1, 1]) {
+            view.setDirection(new Vector3(0, 0, z));
+            view.Orbit(view.getTarget(), 0.2, z * 0.2);
+            expect(view.camera.position.toArray().every(Number.isFinite)).toBe(true);
+            expect(Math.abs(view.getDirection().z)).toBeLessThan(0.999);
+        }
+        expect(() => {
+            view.setDirection(new Vector3());
+        }).toThrow(RangeError);
+        expect(() => {
+            view.setDirection(new Vector3(NaN, 0, 1));
+        }).toThrow(RangeError);
+    });
+
     it("zooms to a point and keeps it under the cursor", () => {
         const cursor : Vector2 = new Vector2(0.4, -0.3);
         const point : Vector3 = view.PointOnTargetPlane(cursor);

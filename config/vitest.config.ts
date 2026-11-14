@@ -15,6 +15,7 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
     root: resolve(import.meta.dirname, ".."),
     test: {
+        attachmentsDir: "build/test/artifacts",
         projects: [
             {
                 test: {
@@ -24,6 +25,9 @@ export default defineConfig({
                 }
             },
             {
+                publicDir: resolve(import.meta.dirname, "../build/static"),
+                optimizeDeps: {include: ["three", "cesium", "proj4", "dxf-parser",
+                    "dxf-parser/dist/ParseHelpers.js", "lerc"]},
                 test: {
                     name: "integration",
                     include: ["test/integration/**/*Test.ts"],

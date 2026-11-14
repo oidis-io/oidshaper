@@ -24,6 +24,8 @@ export default defineConfig({
     reporter: ci ? [["list"], ["html", {outputFolder: `${root}/build/e2e/report`, open: "never"}]] : "list",
     forbidOnly: ci,
     retries: ci ? 1 : 0,
+    // WebGL and live map tests share the GPU and provider request budget.
+    workers: 1,
     use: {
         ...devices["Desktop Chrome"],
         trace: "retain-on-failure"

@@ -8,9 +8,17 @@
  *
  * ********************************************************************************************************* */
 
-export type PointerKind = "left" | "middle" | "right" | "touch";
+export enum PointerKind {
+    LEFT = "left",
+    MIDDLE = "middle",
+    RIGHT = "right",
+    TOUCH = "touch"
+}
 
-export type NavigationAction = "orbit" | "pan";
+export enum NavigationAction {
+    ORBIT = "orbit",
+    PAN = "pan"
+}
 
 export interface IPointerGesture {
     readonly pointer : PointerKind;
@@ -32,65 +40,58 @@ export interface INavigationPresetData {
     readonly bindings : readonly INavigationBinding[];
 }
 
-const POINTERS : readonly PointerKind[] = ["left", "middle", "right", "touch"];
-const ACTIONS : readonly NavigationAction[] = ["orbit", "pan"];
-
-// In every preset, so a touchpad and a touch screen can always navigate.
-const ANY_DEVICE : readonly INavigationBinding[] = [
-    {gesture: {pointer: "left", alt: true}, action: "orbit"},
-    {gesture: {pointer: "left", space: true}, action: "pan"},
-    {gesture: {pointer: "touch"}, action: "orbit"}
-];
-
-const PRESETS : readonly INavigationPresetData[] = [
-    {
-        id: "fusion360",
-        name: "Fusion 360",
-        bindings: [
-            {gesture: {pointer: "middle"}, action: "pan"},
-            {gesture: {pointer: "middle", shift: true}, action: "orbit"},
-            ...ANY_DEVICE
-        ]
-    },
-    {
-        id: "onshape",
-        name: "Onshape",
-        bindings: [
-            {gesture: {pointer: "middle"}, action: "pan"},
-            {gesture: {pointer: "right"}, action: "orbit"},
-            ...ANY_DEVICE
-        ]
-    },
-    {
-        id: "blender",
-        name: "Blender",
-        bindings: [
-            {gesture: {pointer: "middle"}, action: "orbit"},
-            {gesture: {pointer: "middle", shift: true}, action: "pan"},
-            ...ANY_DEVICE
-        ]
-    },
-    {
-        id: "legacy",
-        name: "Legacy",
-        bindings: [
-            {gesture: {pointer: "left"}, action: "orbit"},
-            {gesture: {pointer: "right"}, action: "pan"},
-            ...ANY_DEVICE
-        ]
-    }
-];
-
-function gestureKey(gesture : IPointerGesture) : string {
-    // A touch carries no modifiers.
-    if (gesture.pointer === "touch") {
-        return "touch";
-    }
-    const modifiers : boolean[] = [gesture.ctrl, gesture.alt, gesture.shift, gesture.space].map((on) => on === true);
-    return [gesture.pointer, ...modifiers].join("|");
-}
-
 export class NavigationPreset {
+    private static readonly POINTERS : readonly PointerKind[] = [
+        PointerKind.LEFT, PointerKind.MIDDLE, PointerKind.RIGHT, PointerKind.TOUCH
+    ];
+    private static readonly ACTIONS : readonly NavigationAction[] = [NavigationAction.ORBIT, NavigationAction.PAN];
+
+    // In every preset, so a touchpad and a touch screen can always navigate.
+    private static readonly ANY_DEVICE : readonly INavigationBinding[] = [
+        {gesture: {pointer: PointerKind.LEFT, alt: true}, action: NavigationAction.ORBIT},
+        {gesture: {pointer: PointerKind.LEFT, space: true}, action: NavigationAction.PAN},
+        {gesture: {pointer: PointerKind.TOUCH}, action: NavigationAction.ORBIT}
+    ];
+
+    private static readonly PRESETS : readonly INavigationPresetData[] = [
+        {
+            id: "fusion360",
+            name: "Fusion 360",
+            bindings: [
+                {gesture: {pointer: PointerKind.MIDDLE}, action: NavigationAction.PAN},
+                {gesture: {pointer: PointerKind.MIDDLE, shift: true}, action: NavigationAction.ORBIT},
+                ...NavigationPreset.ANY_DEVICE
+            ]
+        },
+        {
+            id: "onshape",
+            name: "Onshape",
+            bindings: [
+                {gesture: {pointer: PointerKind.MIDDLE}, action: NavigationAction.PAN},
+                {gesture: {pointer: PointerKind.RIGHT}, action: NavigationAction.ORBIT},
+                ...NavigationPreset.ANY_DEVICE
+            ]
+        },
+        {
+            id: "blender",
+            name: "Blender",
+            bindings: [
+                {gesture: {pointer: PointerKind.MIDDLE}, action: NavigationAction.ORBIT},
+                {gesture: {pointer: PointerKind.MIDDLE, shift: true}, action: NavigationAction.PAN},
+                ...NavigationPreset.ANY_DEVICE
+            ]
+        },
+        {
+            id: "legacy",
+            name: "Legacy",
+            bindings: [
+                {gesture: {pointer: PointerKind.LEFT}, action: NavigationAction.ORBIT},
+                {gesture: {pointer: PointerKind.RIGHT}, action: NavigationAction.PAN},
+                ...NavigationPreset.ANY_DEVICE
+            ]
+        }
+    ];
+
     public readonly id : string;
     public readonly name : string;
     private readonly bindings : INavigationBinding[];
@@ -100,11 +101,11 @@ export class NavigationPreset {
     }
 
     public static All() : NavigationPreset[] {
-        return PRESETS.map((data) => new NavigationPreset(data));
+        return NavigationPreset.PRESETS.map((data) => new NavigationPreset(data));
     }
 
     public static Describe(gesture : IPointerGesture) : string {
-        if (gesture.pointer === "touch") {
+        if (gesture.pointer === PointerKind.TOUCH) {
             return "one-finger drag";
         }
         const keys : string[] = [];
@@ -124,16 +125,26 @@ export class NavigationPreset {
         return keys.join(" + ");
     }
 
+    private static gestureKey(gesture : IPointerGesture) : string {
+        // A touch carries no modifiers.
+        if (gesture.pointer === PointerKind.TOUCH) {
+            return PointerKind.TOUCH;
+        }
+        const modifiers : boolean[] = [gesture.ctrl, gesture.alt, gesture.shift, gesture.space]
+            .map((on) => on === true);
+        return [gesture.pointer, ...modifiers].join("|");
+    }
+
     constructor(data : INavigationPresetData) {
         const used : Set<string> = new Set<string>();
         for (const binding of data.bindings) {
-            if (!POINTERS.includes(binding.gesture.pointer)) {
+            if (!NavigationPreset.POINTERS.includes(binding.gesture.pointer)) {
                 throw new Error(`${data.name}: unknown pointer "${binding.gesture.pointer}".`);
             }
-            if (!ACTIONS.includes(binding.action)) {
+            if (!NavigationPreset.ACTIONS.includes(binding.action)) {
                 throw new Error(`${data.name}: unknown action "${binding.action}".`);
             }
-            const key : string = gestureKey(binding.gesture);
+            const key : string = NavigationPreset.gestureKey(binding.gesture);
             if (used.has(key)) {
                 throw new Error(`${data.name}: ${NavigationPreset.Describe(binding.gesture)} is bound twice.`);
             }
@@ -150,8 +161,8 @@ export class NavigationPreset {
 
     // Modifiers must match exactly.
     public Match(gesture : IPointerGesture) : NavigationAction | null {
-        const key : string = gestureKey(gesture);
-        return this.bindings.find((binding) => gestureKey(binding.gesture) === key)?.action ?? null;
+        const key : string = NavigationPreset.gestureKey(gesture);
+        return this.bindings.find((binding) => NavigationPreset.gestureKey(binding.gesture) === key)?.action ?? null;
     }
 
     public toJSON() : INavigationPresetData {

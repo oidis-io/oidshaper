@@ -8,14 +8,12 @@
  *
  * ********************************************************************************************************* */
 
-import { Vector2, type Vector3 } from "three";
-import type { NavigationAction, NavigationPreset, PointerKind } from "../core/NavigationPreset.js";
-import type { ViewCamera } from "./ViewCamera.js";
+import { Vector2 } from "three";
+import { NavigationAction, PointerKind } from "../core/NavigationPreset.js";
 
-const ORBIT_SPEED : number = 0.006; // rad per CSS pixel
-const ZOOM_SPEED : number = 0.0015; // ln of the zoom factor per wheel pixel
-const LINE_HEIGHT : number = 16;
-const PAGE_HEIGHT : number = 800;
+import type { Vector3 } from "three";
+import type { NavigationPreset } from "../core/NavigationPreset.js";
+import type { ViewCamera } from "./ViewCamera.js";
 
 export interface INavigationHost {
     Pick(ndc : Vector2) : Vector3 | null;
@@ -34,41 +32,45 @@ interface IDrag {
     y : number;
 }
 
-function pointerOf(event : PointerEvent) : PointerKind | null {
-    if (event.pointerType === "touch") {
-        return event.isPrimary ? "touch" : null;
-    }
-    switch (event.button) {
-        case 0:
-            return "left";
-        case 1:
-            return "middle";
-        case 2:
-            return "right";
-        default:
-            return null;
-    }
-}
-
-function wheelPixels(event : WheelEvent) : number {
-    switch (event.deltaMode) {
-        case WheelEvent.DOM_DELTA_LINE:
-            return event.deltaY * LINE_HEIGHT;
-        case WheelEvent.DOM_DELTA_PAGE:
-            return event.deltaY * PAGE_HEIGHT;
-        default:
-            return event.deltaY;
-    }
-}
-
 export class PointerNavigation {
+    private static readonly ORBIT_SPEED : number = 0.006; // rad per CSS pixel
+    private static readonly ZOOM_SPEED : number = 0.0015; // ln of the zoom factor per wheel pixel
+    private static readonly LINE_HEIGHT : number = 16;
+    private static readonly PAGE_HEIGHT : number = 800;
     private readonly canvas : HTMLCanvasElement;
     private readonly view : ViewCamera;
     private readonly host : INavigationHost;
     private readonly listeners : AbortController = new AbortController();
     private preset : NavigationPreset;
-    private drag : IDrag | null = null;
+    private drag? : IDrag;
     private space : boolean = false;
+
+    private static pointerOf(event : PointerEvent) : PointerKind | null {
+        if (event.pointerType === "touch") {
+            return event.isPrimary ? PointerKind.TOUCH : null;
+        }
+        switch (event.button) {
+            case 0:
+                return PointerKind.LEFT;
+            case 1:
+                return PointerKind.MIDDLE;
+            case 2:
+                return PointerKind.RIGHT;
+            default:
+                return null;
+        }
+    }
+
+    private static wheelPixels(event : WheelEvent) : number {
+        switch (event.deltaMode) {
+            case WheelEvent.DOM_DELTA_LINE:
+                return event.deltaY * PointerNavigation.LINE_HEIGHT;
+            case WheelEvent.DOM_DELTA_PAGE:
+                return event.deltaY * PointerNavigation.PAGE_HEIGHT;
+            default:
+                return event.deltaY;
+        }
+    }
 
     constructor(canvas : HTMLCanvasElement, view : ViewCamera, preset : NavigationPreset, host : INavigationHost) {
         this.canvas = canvas;
@@ -119,8 +121,8 @@ export class PointerNavigation {
     }
 
     private onPointerDown(event : PointerEvent) : void {
-        const pointer : PointerKind | null = pointerOf(event);
-        if (this.drag !== null || pointer === null) {
+        const pointer : PointerKind | null = PointerNavigation.pointerOf(event);
+        if (this.drag !== undefined || pointer === null) {
             return;
         }
         const action : NavigationAction | null = this.preset.Match({
@@ -141,18 +143,18 @@ export class PointerNavigation {
         if (content !== null) {
             anchor = content;
         } else {
-            anchor = action === "orbit" ? this.view.getTarget() : this.view.PointOnTargetPlane(ndc);
+            anchor = action === NavigationAction.ORBIT ? this.view.getTarget() : this.view.PointOnTargetPlane(ndc);
         }
         this.canvas.setPointerCapture(event.pointerId);
         this.drag = {pointerId: event.pointerId, action, anchor, x: event.clientX, y: event.clientY};
-        if (action === "orbit") {
+        if (action === NavigationAction.ORBIT) {
             this.host.ShowPivot(anchor);
             this.host.Changed();
         }
     }
 
     private onPointerMove(event : PointerEvent) : void {
-        const drag : IDrag | null = this.drag;
+        const drag : IDrag | undefined = this.drag;
         if (drag?.pointerId !== event.pointerId) {
             return;
         }
@@ -160,9 +162,9 @@ export class PointerNavigation {
         const dy : number = event.clientY - drag.y;
         drag.x = event.clientX;
         drag.y = event.clientY;
-        if (drag.action === "orbit") {
+        if (drag.action === NavigationAction.ORBIT) {
             // The scene follows the pointer.
-            this.view.Orbit(drag.anchor, -dx * ORBIT_SPEED, -dy * ORBIT_SPEED);
+            this.view.Orbit(drag.anchor, -dx * PointerNavigation.ORBIT_SPEED, -dy * PointerNavigation.ORBIT_SPEED);
         } else {
             this.view.Pan(drag.anchor, this.toNdc(event));
         }
@@ -180,7 +182,7 @@ export class PointerNavigation {
         const ndc : Vector2 = this.toNdc(event);
         const point : Vector3 = this.host.Pick(ndc) ?? this.view.PointOnTargetPlane(ndc);
         // Exponential, so zooming back returns to the same view.
-        this.view.Zoom(point, Math.exp(wheelPixels(event) * ZOOM_SPEED));
+        this.view.Zoom(point, Math.exp(PointerNavigation.wheelPixels(event) * PointerNavigation.ZOOM_SPEED));
         this.host.Changed();
     }
 
@@ -196,13 +198,13 @@ export class PointerNavigation {
     }
 
     private end() : void {
-        if (this.drag === null) {
+        if (this.drag === undefined) {
             return;
         }
         if (this.canvas.hasPointerCapture(this.drag.pointerId)) {
             this.canvas.releasePointerCapture(this.drag.pointerId);
         }
-        this.drag = null;
+        delete this.drag;
         this.host.ShowPivot(null);
         this.host.Changed();
     }

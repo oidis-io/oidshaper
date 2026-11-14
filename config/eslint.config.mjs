@@ -13,7 +13,7 @@ import stylistic from "@stylistic/eslint-plugin";
 import jsdoc from "eslint-plugin-jsdoc";
 import globals from "globals";
 import tseslint from "typescript-eslint";
-import oidis from "./eslint-rules.mjs";
+import { oidisPlugin, classStructureRestrictions } from "./eslint-rules.mjs";
 
 const MODULES = {
     core: [],
@@ -103,12 +103,15 @@ const RULES = {
         }
     }],
     "@typescript-eslint/consistent-type-assertions": ["error", {assertionStyle: "angle-bracket"}],
-    "@typescript-eslint/consistent-type-imports": ["error", {fixStyle: "inline-type-imports"}],
+    "@typescript-eslint/consistent-type-imports": ["error", {fixStyle: "separate-type-imports"}],
     "@typescript-eslint/consistent-indexed-object-style": ["error", "index-signature"],
     "@typescript-eslint/array-type": ["error", {default: "array-simple"}],
     "@typescript-eslint/explicit-member-accessibility": ["error", {overrides: {constructors: "no-public"}}],
     "@typescript-eslint/explicit-function-return-type": ["error", {allowExpressions: true}],
     "@typescript-eslint/no-inferrable-types": "off",
+    "@typescript-eslint/no-extraneous-class": "off",
+    "@typescript-eslint/prefer-function-type": "off",
+    "@typescript-eslint/no-unsafe-enum-comparison": "off",
     "@typescript-eslint/no-unused-vars": ["error", {argsIgnorePattern: "^_", varsIgnorePattern: "^_"}],
     "@typescript-eslint/ban-ts-comment": ["error", {minimumDescriptionLength: 10}],
     "@typescript-eslint/return-await": ["error", "always"],
@@ -122,18 +125,19 @@ const RULES = {
         {selector: "variable", format: ["camelCase", "UPPER_CASE"], leadingUnderscore: "allow"},
         {selector: "typeLike", format: ["PascalCase"]},
         {selector: "interface", format: ["PascalCase"], prefix: ["I"]},
+        {selector: "typeProperty", filter: {regex: "^On[A-Z]", match: true}, format: ["PascalCase"]},
         {selector: "enumMember", format: ["PascalCase", "UPPER_CASE"]},
         {selector: "classProperty", modifiers: ["static", "readonly"], format: ["camelCase", "UPPER_CASE"]},
         {
             selector: "classMethod",
             modifiers: ["public"],
             format: ["PascalCase"],
-            filter: {regex: "^(get|set)[A-Z]|^(toString|toJSON|valueOf)$", match: false}
+            filter: {regex: "^(get|set|Get|Set)([A-Z]|$)|^(toString|toJSON|valueOf)$", match: false}
         },
         {
             selector: "typeMethod",
             format: ["PascalCase"],
-            filter: {regex: "^(get|set)[A-Z]|^(toString|toJSON|valueOf)$", match: false}
+            filter: {regex: "^(get|set|Get|Set)([A-Z]|$)|^(toString|toJSON|valueOf)$", match: false}
         },
         {selector: ["objectLiteralProperty", "objectLiteralMethod"], format: null}
     ],
@@ -159,6 +163,7 @@ const RULES = {
     // @stylistic would write name ?: Type.
     "@stylistic/type-annotation-spacing": "off",
     "oidis/type-annotation-spacing": "error",
+    "oidis/import-groups": "error",
     "@stylistic/array-bracket-spacing": ["error", "never"],
     "@stylistic/brace-style": ["error", "1tbs", {allowSingleLine: false}],
     "@stylistic/arrow-parens": ["error", "always"],
@@ -207,7 +212,7 @@ export default tseslint.config(
         },
         plugins: {
             "@stylistic": stylistic,
-            "oidis": oidis,
+            "oidis": oidisPlugin,
             "jsdoc": jsdoc
         },
         rules: RULES
@@ -223,6 +228,31 @@ export default tseslint.config(
     {
         files: ["src/typescript/*.ts"],
         rules: {"no-restricted-imports": ["error", {patterns: [SELF_IMPORT]}]}
+    },
+    {
+        files: ["src/typescript/**/*.ts"],
+        rules: {
+            "no-restricted-syntax": [
+                "error",
+                {selector: "TSTypeLiteral", message: "Extract an interface instead of an anonymous object type."},
+                ...classStructureRestrictions
+            ],
+            "oidis/callable-interfaces": "error",
+            "oidis/structured-contracts": "error",
+            "@typescript-eslint/no-magic-numbers": ["error", {
+                ignore: [-1, 0, 1, 2],
+                ignoreArrayIndexes: true,
+                ignoreEnums: true,
+                ignoreNumericLiteralTypes: true,
+                ignoreReadonlyClassProperties: true,
+                ignoreTypeIndexes: true,
+                enforceConst: true
+            }],
+            "@stylistic/padding-line-between-statements": ["error",
+                {blankLine: "always", prev: "*", next: ["interface", "enum", "class"]},
+                {blankLine: "always", prev: ["interface", "enum", "class"], next: "*"}
+            ]
+        }
     },
     ...Object.entries(MODULES).map(([module, allowed]) => moduleBoundaries(module, allowed)),
     {

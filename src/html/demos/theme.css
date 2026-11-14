@@ -1,0 +1,67 @@
+/*! ******************************************************************************************************** *
+ *
+ * Copyright 2026 Oidis
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ * The BSD-3-Clause license for this file can be found in the LICENSE file included with this distribution
+ * or at https://spdx.org/licenses/BSD-3-Clause.html#licenseText
+ *
+ * ********************************************************************************************************* */
+
+:root {
+    color-scheme: dark;
+    --background: #202124;
+    --panel: #29313b;
+    --text: #e8eef6;
+    --muted: #b4c0ce;
+    --border: #4b596a;
+    --control: #354151;
+    --hover: #44556b;
+    --link: #8fc1ff;
+}
+:root[data-theme="light"] {
+    color-scheme: light;
+    --background: #edf1f5;
+    --panel: #ffffff;
+    --text: #233447;
+    --muted: #526274;
+    --border: #bac7d4;
+    --control: #f2f5f9;
+    --hover: #e0eaf5;
+    --link: #175ca8;
+}
+html body {
+    background: var(--background);
+    color: var(--text);
+    font: 13px/1.5 system-ui, sans-serif;
+}
+body aside, body .panel {
+    background: var(--panel);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: 0 4px 16px #0002;
+    padding: 12px;
+}
+body a, body header a { color: var(--link); }
+body label, body header label { color: var(--text); }
+body p, body .hint { color: var(--muted); }
+body button, body select, body input:not([type="checkbox"]), body input::file-selector-button,
+body header select {
+    box-sizing: border-box;
+    color: var(--text);
+    background: var(--control);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 5px 8px;
+    font: inherit;
+}
+body button, body select, body input::file-selector-button { cursor: pointer; }
+body button:hover, body input::file-selector-button:hover { background: var(--hover); }
+body :focus-visible { outline: 2px solid var(--link); outline-offset: 2px; }
+body input[type="checkbox"] { accent-color: var(--link); vertical-align: middle; }
+body input[type="file"] { max-width: 100%; width: 230px; }
+body aside label { display: inline-flex; align-items: center; gap: 4px; margin: 3px; }
+body aside button { margin: 3px; }
+body #credits { background: var(--panel); color: var(--text); }
+body #credits a { color: var(--link); }

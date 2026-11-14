@@ -45,7 +45,9 @@
     "test:unit": "vitest run --config config/vitest.config.ts --project unit",
     "test:integration": "vitest run --config config/vitest.config.ts --project integration",
     "test:e2e": "playwright test --config config/playwright.config.ts",
-    "browsers": "playwright install chromium"
+    "browsers": "playwright install chromium",
+    "predev": "node scripts/prepare-cesium.mjs",
+    "prebuild": "node scripts/prepare-cesium.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -54,10 +56,14 @@
     "@types/node": "^26.6.6",
     "@types/three": "^0.187.0",
     "@vitest/browser-playwright": "^5.1.0",
+    "cesium": "1.147.0",
+    "dxf-parser": "1.1.2",
     "eslint": "^10.14.0",
     "eslint-plugin-jsdoc": "^65.4.5",
     "globals": "^17.14.0",
+    "lerc": "2.0.0",
     "playwright": "^1.65.0",
+    "proj4": "2.23.0",
     "three": "^0.187.0",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.72.2",

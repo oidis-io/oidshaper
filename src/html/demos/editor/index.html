@@ -1,0 +1,81 @@
+<!doctype html>
+<!--
+
+Copyright 2026 Oidis
+
+SPDX-License-Identifier: BSD-3-Clause
+The BSD-3-Clause license for this file can be found in the LICENSE file included with this distribution
+or at https://spdx.org/licenses/BSD-3-Clause.html#licenseText
+
+-->
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Oidshaper — Entity editor</title>
+    <link rel="stylesheet" href="../theme.css"><link rel="stylesheet" href="../drawing/editor.css">
+</head>
+<body>
+<canvas id="view" tabindex="0"></canvas>
+<aside aria-label="Entity editor">
+    <header><a href="../">← Demos</a><strong>Entity editor</strong>
+        <select id="theme" aria-label="Theme"><option value="dark">Dark</option><option value="light">Light</option></select>
+    </header>
+    <section class="tools">
+        <label>Tool <select id="tool"><option value="edit">Select / edit</option><option value="move">Move (G)</option><option value="rotate">Rotate (R)</option>
+            <option value="scale">Scale (S)</option><option value="line">Line</option>
+            <option value="point">Point</option><option value="polyline">Polyline</option>
+            <option value="polygon">Polygon</option><option value="rectangle">Rectangle</option><option value="circle">Circle</option>
+            <option value="box">Insert box</option></select></label>
+        <label>Plane <select id="plane"><option>XY</option><option>XZ</option><option>YZ</option></select></label>
+        <div class="row"><label>Plane Z <input id="height" type="number" value="0"></label>
+            <label>Grid step <input id="snap" type="number" min="0" value="1" step="any"></label></div>
+        <label><input id="grid-snap" type="checkbox" checked>Snap to grid</label>
+        <p class="hint">Shared by drawing, dragging and grips. Object snapping remains active.
+            Step 0 also disables grid snapping; numeric transforms use the exact entered values.</p>
+        <output id="snap-kind">plane</output>
+        <div class="row"><button id="undo">Undo</button><button id="redo">Redo</button>
+            <button id="delete">Delete selected</button><button id="empty">Empty scene</button>
+            <button id="finish">Finish path</button><button id="group">Group</button><button id="ungroup">Ungroup</button></div>
+    </section>
+    <section>
+        <div class="row"><label>Area <select id="selection-shape"><option value="rectangle">Rectangle</option>
+            <option value="lasso">Lasso</option></select></label><output id="selection-count">0 selected</output></div>
+        <p class="hint">→ Entire objects · ← Touching objects<br>Shift adds · Ctrl/Cmd removes</p>
+        <label>Object <select id="object"><option value="">Select an object</option></select></label>
+    </section>
+    <section>
+        <strong>Transform selection</strong>
+        <label>Operation <select id="operation"><option value="move">Move</option><option value="copy">Copy</option>
+            <option value="rotate">Rotate (°)</option>
+            <option value="scale">Scale</option></select></label>
+        <div class="row"><label>X <input id="tx" type="number" value="0" step="0.1"></label>
+            <label>Y <input id="ty" type="number" value="0" step="0.1"></label>
+            <label>Z <input id="tz" type="number" value="0" step="0.1"></label></div>
+        <button id="apply">Apply transform</button>
+        <p class="hint">Move: X/Y/Z are offsets in world axes. Set only Z to raise or lower the selection.
+            G: move · R: rotate · S: scale. Drag an axis arrow in the scene; XY/XZ/YZ planes appear near the
+            centre, the centre diamond moves in the view plane.
+            Click a vertex to move just that point. Escape returns to selection.</p>
+        <p class="hint">Rotate and scale around the selection centre. Each operation is one undo step.</p>
+    </section>
+    <section><strong>Layers</strong><div id="layers"></div>
+        <label>Name <input id="layer-name" placeholder="New layer"></label><button id="add-layer">Add layer</button>
+        <label>Target <select id="target-layer"></select></label><button id="move-layer">Move selection to layer</button>
+        <button id="rename-layer">Rename target</button><button id="remove-layer">Remove target</button>
+        <p class="hint">Rename uses Name. Removing a layer moves its entities to default.</p>
+    </section>
+    <section><button id="save">Save scene</button>
+        <label>Replace scene <input id="load" type="file" accept=".json"></label>
+        <label>Insert model hierarchy <input id="insert" type="file" accept=".json"></label>
+        <label><input id="autosave" type="checkbox">Autosave in this browser</label>
+        <button id="restore">Restore saved project</button><output id="storage-status"></output></section>
+    <details><summary>Help</summary><p>Line, rectangle and circle use two clicks in the selected plane.
+        Z sets the plane origin height. Point and box use one click.
+        Polyline and polygon finish with Enter or Finish path. Undo removes a pending point.
+        Drag a grip in its editing plane. Circle grips use the circle plane; mesh grips use the selected plane.
+        Mesh corners remain shared between faces. Escape cancels.</p></details>
+    <p id="status" role="status"></p>
+</aside>
+<script type="module" src="../../../typescript/demos/editor/main.ts"></script>
+</body>
+</html>

@@ -1,0 +1,305 @@
+/*! ******************************************************************************************************** *
+ *
+ * Copyright 2026 Oidis
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ * The BSD-3-Clause license for this file can be found in the LICENSE file included with this distribution
+ * or at https://spdx.org/licenses/BSD-3-Clause.html#licenseText
+ *
+ * ********************************************************************************************************* */
+
+html, body {
+    margin: 0;
+    height: 100%;
+    overflow: hidden;
+}
+
+canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+body aside {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    width: 304px;
+    max-width: calc(100% - 212px);
+    max-height: calc(100% - 50px);
+    overflow: auto;
+    z-index: 3;
+}
+
+header, .row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+header {
+    justify-content: space-between;
+}
+
+header select {
+    max-width: 76px;
+}
+
+section {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.tools > label, .edit-controls > label {
+    display: flex;
+}
+
+.tools > label select, .edit-controls > label select {
+    flex: 1;
+    min-width: 0;
+}
+
+input[type="number"] {
+    width: 80px;
+}
+
+body .hint {
+    font-size: 11px;
+    margin: 6px 3px;
+}
+
+#layers {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    max-height: 120px;
+    overflow: auto;
+}
+
+#selection-count {
+    margin-left: auto;
+    color: var(--link);
+    font-size: 12px;
+}
+
+#status {
+    font-size: 12px;
+    margin-bottom: 0;
+    overflow-wrap: anywhere;
+}
+
+details {
+    margin-top: 10px;
+    font-size: 12px;
+}
+
+summary {
+    cursor: pointer;
+    color: var(--muted);
+}
+
+.edit-controls[hidden] {
+    display: none;
+}
+
+.vertex-handles {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 2;
+    background: transparent;
+}
+
+.vertex-handle {
+    position: absolute;
+    pointer-events: auto;
+    width: 12px;
+    height: 12px;
+    padding: 0;
+    margin: 0;
+    transform: translate(-50%, -50%);
+    background: #12b5cb;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    cursor: move;
+    touch-action: none;
+}
+
+.vertex-handle[aria-pressed="true"] {
+    background: #ffbb33;
+    width: 16px;
+    height: 16px;
+}
+
+.area-selection {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.area-selection polygon {
+    stroke: #4c9bff;
+    stroke-width: 1.5;
+    fill: #4c9bff22;
+    fill-rule: evenodd;
+}
+
+.area-selection[data-mode="crossing"] polygon {
+    stroke: #42c992;
+    fill: #42c99222;
+    stroke-dasharray: 6 4;
+}
+
+@media (max-width: 650px) {
+    body aside {
+        width: 240px;
+        max-width: calc(100% - 48px);
+        max-height: 42%;
+    }
+
+    header strong {
+        display: none;
+    }
+}
+
+/* Gizmo palette follows docs/design/scene-design.css. */
+
+:root {
+    --axis-x: #ed777c;
+    --axis-y: #7ec48d;
+    --axis-z: #79acff;
+    --selection: #ffc765;
+    --plane-fill: .13;
+}
+
+:root[data-theme="light"] {
+    --axis-x: #ba3343;
+    --axis-y: #287740;
+    --axis-z: #245bc4;
+    --selection: #996000;
+}
+
+.axis-move-gizmo {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.axis-move-gizmo[hidden] {
+    display: none;
+}
+
+.axis-x {
+    --axis-colour: var(--axis-x);
+}
+
+.axis-y {
+    --axis-colour: var(--axis-y);
+}
+
+.axis-z {
+    --axis-colour: var(--axis-z);
+}
+
+.transform-overlay {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: visible;
+    touch-action: none;
+}
+
+.transform-overlay g {
+    outline: none;
+}
+
+.gizmo-line {
+    fill: none;
+    stroke: var(--axis-colour);
+    stroke-width: 2;
+    stroke-linecap: round;
+}
+
+.gizmo-shape {
+    fill: var(--axis-colour);
+    stroke: var(--axis-colour);
+    stroke-width: 1;
+    stroke-linejoin: round;
+}
+
+.gizmo-hit {
+    fill: none;
+    stroke: transparent;
+    stroke-width: 12;
+    stroke-linecap: round;
+}
+
+.gizmo-label {
+    fill: var(--axis-colour);
+    font: bold 12px system-ui, sans-serif;
+    user-select: none;
+}
+
+.gizmo-guide {
+    stroke: var(--axis-colour);
+    stroke-width: 1;
+    stroke-dasharray: 6 4;
+    opacity: .8;
+}
+
+.gizmo-ghost {
+    fill: none;
+    stroke: var(--muted);
+    stroke-width: 1.5;
+}
+
+.gizmo-axis[data-state="hover"] .gizmo-line, .gizmo-axis[data-state="active"] .gizmo-line {
+    stroke-width: 4;
+}
+
+.gizmo-plane .gizmo-shape {
+    fill-opacity: var(--plane-fill);
+    stroke-width: 1.5;
+}
+
+.gizmo-plane[data-state="hover"] .gizmo-shape, .gizmo-plane[data-state="active"] .gizmo-shape {
+    fill-opacity: .3;
+    stroke-width: 3;
+}
+
+.gizmo-plane .gizmo-label, .gizmo-centre .gizmo-label {
+    display: none;
+}
+
+.gizmo-plane:is([data-state="hover"], [data-state="active"]) .gizmo-label {
+    display: block;
+}
+
+.gizmo-centre[data-state="active"] .gizmo-label {
+    display: block;
+}
+
+.gizmo-centre {
+    --axis-colour: var(--text);
+}
+
+.gizmo-centre .gizmo-shape {
+    fill: var(--selection);
+    stroke: var(--text);
+    stroke-width: 1.5;
+}
+
+.gizmo-centre[data-state="hover"] .gizmo-shape {
+    stroke-width: 3;
+}
+
+.transform-overlay [data-state="inactive"] {
+    opacity: .22;
+}
