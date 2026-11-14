@@ -1,0 +1,104 @@
+/* Copyright 2026 Oidis */
+
+:root {
+    --background: #171b21;
+    --surface: #20262e;
+    --text: #e6edf5;
+    --muted: #a0adbd;
+    --grid: #303944;
+    --face-front: #414d5b;
+    --face-top: #566476;
+    --face-side: #34404e;
+    --selection: #ffc765;
+    --removal: #f07880;
+    --context-edge: #788593;
+    --hover: #c1cedd;
+    --axis-x: #ed777c;
+    --axis-y: #7ec48d;
+    --axis-z: #79acff;
+    --snap: #d8e1e9;
+    --plane-fill: .13;
+    --plane-active-fill: .22;
+    --component-fill: .24;
+    --inactive-opacity: .22;
+    --selection-context-opacity: .65;
+}
+
+body:has(#light:checked) {
+    --background: #edf1f5;
+    --surface: #ffffff;
+    --text: #1b293b;
+    --muted: #55667b;
+    --grid: #e3e8ef;
+    --face-front: #cad4df;
+    --face-top: #e2e8f0;
+    --face-side: #b5c2d1;
+    --selection: #996000;
+    --removal: #b72c3c;
+    --context-edge: #74818f;
+    --hover: #526b88;
+    --axis-x: #ba3343;
+    --axis-y: #287740;
+    --axis-z: #245bc4;
+    --snap: #344454;
+}
+
+body { margin: 0; background: var(--background); color: var(--text); font: 16px system-ui, sans-serif; }
+header, section { max-width: 1404px; margin: auto; padding: 24px 18px; }
+header { border-bottom: 1px solid var(--context-edge); }
+h1 { font-size: 28px; }
+h2 { font-size: 23px; margin-bottom: 8px; }
+p { color: var(--muted); max-width: 1000px; line-height: 1.5; }
+label { display: inline-block; padding: 12px; cursor: pointer; }
+a { color: var(--axis-z); }
+nav { display: flex; flex-wrap: wrap; gap: 12px 24px; }
+.illustration { display: block; width: 100%; height: auto; }
+.illustration text { font-family: Arial, sans-serif; fill: var(--text); }
+.illustration .line { fill: none; stroke-linejoin: round; stroke-linecap: round; }
+.plane { fill-opacity: var(--plane-fill); }
+.plane-active { fill-opacity: var(--plane-active-fill); }
+.component-face { fill-opacity: var(--component-fill); }
+.inactive { opacity: var(--inactive-opacity); }
+
+/* Keep the selected parent identifiable during component editing. */
+.selected-context {
+    stroke: var(--selection);
+    stroke-opacity: var(--selection-context-opacity);
+    stroke-width: 1.5;
+}
+
+/* Dashed control planes cannot be mistaken for solid edges. */
+#move .plane, #move .plane-active, #vertex-flow .plane, #vertex-flow .plane-active,
+#scale .plane, #scale .plane-active { stroke-dasharray: 5 4; }
+.reference-sheet text { font-size: 16px; }
+.reference-sheet .reference-title { font-size: 19px; font-weight: 600; }
+.reference-sheet .reference-note { font-size: 15px; fill: var(--muted); }
+.reference-sheet .dimension-label { text-anchor: middle; font-size: 16px; }
+.dimension-line { fill: none; stroke: var(--text); stroke-width: 1.5; }
+.dimension-extension { fill: none; stroke: var(--muted); stroke-width: 1; stroke-dasharray: 4 4; }
+.axis-x-guide { fill: none; stroke: var(--axis-x); stroke-width: 2; }
+.reference-sheet .axis-x-label { fill: var(--axis-x); }
+
+/* Cards retain their own viewBox instead of shrinking a complete multi-row sheet. */
+.diagram-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 400px), 1fr));
+    align-items: start;
+    gap: 24px;
+    margin: 24px 0;
+}
+.chapter { max-width: 1404px; margin: 48px auto 0; padding: 24px 18px 0; border-top: 1px solid var(--grid); }
+.chapter h2 { margin: 8px 0; font-size: 28px; }
+.stage-label { color: var(--muted); text-transform: uppercase; letter-spacing: .08em; font-size: 13px; }
+.contents { margin-top: 20px; }
+.contents summary { cursor: pointer; padding: 8px 0; }
+.contents nav { padding-top: 12px; }
+table { border-collapse: collapse; width: 100%; max-width: 1000px; margin: 24px 0; }
+th, td { text-align: left; vertical-align: top; padding: 12px; border: 1px solid var(--grid); }
+th { background: var(--surface); }
+li { margin: 8px 0; }
+.anchor-alias { display: block; }
+@media (max-width: 600px) {
+    header, section, .chapter { padding-left: 12px; padding-right: 12px; }
+    .diagram-grid { gap: 16px; }
+}

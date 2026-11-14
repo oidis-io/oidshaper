@@ -32,6 +32,10 @@ Node.js 26 and npm; Chromium for the browser tests: `npm run browsers`.
 The linter keeps the module boundaries: three.js only in `render`, CesiumJS only in `map`, demos only through the
 public API.
 
+## Scene interaction design
+
+The [design manual](docs/design/scene-interactions.html) defines entity editing and scene interactions.
+
 ## Code style
 
 Checked by the linter: public methods in PascalCase except `getX`/`setX`, interfaces with `I`, `name : Type`,

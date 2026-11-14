@@ -4,7 +4,7 @@
 /build/
 
 # Internal planning documents, kept locally only
-/docs/plan/
+/docs/private/
 
 # Test output
 **/__screenshots__/
